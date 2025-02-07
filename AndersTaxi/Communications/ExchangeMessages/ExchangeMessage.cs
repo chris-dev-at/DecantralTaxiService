@@ -2,7 +2,7 @@
 
 namespace Communications.ExchangeMessages;
 
-public abstract class ExchangeMessage
+public class ExchangeMessage  /*maybe make abstract when time*/
 {
     public MessageType Type { get; set; }
 
@@ -21,7 +21,9 @@ public abstract class ExchangeMessage
         }
         catch (JsonException ex)
         {
-            throw new InvalidCastException($"Failed to deserialize message: {ex.Message}", ex);
+            Console.WriteLine($"Failed to deserialize message: {ex.Message}");
+            return null;
+            //throw new InvalidCastException($"Failed to deserialize message: {ex.Message}", ex);
         }
     }
 

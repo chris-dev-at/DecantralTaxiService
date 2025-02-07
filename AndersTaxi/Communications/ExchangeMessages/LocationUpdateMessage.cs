@@ -6,4 +6,9 @@ public class LocationUpdateMessage : ExchangeMessage
 {
     public Location Location { get; set; }
     public string DriverId { get; set; }
+    
+    public LocationUpdateMessage()
+    {
+        Type = MessageType.LocationUpdate;
+    }
 }

@@ -27,11 +27,11 @@ public class CommunicationHandlerFactory
         return ret;
     }
     
-    public async Task<ConsumerHandler> CreateConsumerHandler(string queueName)
+    public async Task<ConsumerHandler> CreateConsumerHandler(string queueName, bool raw = false)
     {
         await WaitForRabbitMQ(_hostName);
         
-        var handler = new ConsumerHandler();
+        var handler = new ConsumerHandler(raw);
         
         IChannel channel = await _connection.CreateChannelAsync();
         await handler.ConnectToQueueAsync(queueName, channel);

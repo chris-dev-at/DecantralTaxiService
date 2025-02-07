@@ -13,7 +13,7 @@
       context: .
       dockerfile: DriverService/Dockerfile
     ports:
-      - "8081:8080"
+      - "8002:8080"
     depends_on:
       - rabbitmq
 
@@ -31,7 +31,7 @@
       context: .
       dockerfile: PassengerService/Dockerfile
     ports:
-      - "8080:8080"
+      - "8001:8080"
     depends_on:
       - rabbitmq
 
@@ -61,7 +61,23 @@
       retries: 5
       start_period: 10s
 
+  setupqueues:
+    image: setupqueues
+    build:
+      context: .
+      dockerfile: SetupQueues/Dockerfile
+
+  simulator:
+    image: simulator
+    build:
+      context: .
+      dockerfile: Simulator/Dockerfile
+    ports:
+      - "8000:8080"
 
 volumes: 
     rabbitmq_data:
+  
+  
+
   

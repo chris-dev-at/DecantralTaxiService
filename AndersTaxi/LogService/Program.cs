@@ -15,16 +15,15 @@ class Program
 
         //Log for now to Console
         var f = await CommunicationHandlerFactory.Initialize("rabbitmq");
-        var consumerHandler = await f.CreateConsumerHandler("log_queue");
+        var consumerHandler = await f.CreateConsumerHandler("log_queue", true);
 
-        consumerHandler.OnMessage += Consume;
-
+        consumerHandler.OnRawMessage += Consume;
 
         //keep alive
         _quitEvent.WaitOne();
     }
     
-    public static void Consume(object sender, MessageArgs e)
+    public static void Consume(object sender, RawMessageArgs e)
     {
         Console.WriteLine($"Logged Message: {e.Message}");
     }

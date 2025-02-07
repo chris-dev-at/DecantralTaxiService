@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Communications.ExchangeMessages;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -26,5 +27,7 @@ public class ProducerHandler
         
         Console.WriteLine($"Sent message: {message}");
     }
-    
+
+    public async Task SendMessageAsync(string routingKey, ExchangeMessage message) =>
+        SendMessageAsync(routingKey, await ExchangeMessage.ToMessage(message));
 }
