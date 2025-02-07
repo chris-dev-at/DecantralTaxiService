@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndersTaxi", "AndersTaxi\AndersTaxi.csproj", "{1366B487-F4B9-4A91-8664-488D75C848A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SetupQueues", "SetupQueues\SetupQueues.csproj", "{1366B487-F4B9-4A91-8664-488D75C848A4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaymentService", "PaymentService\PaymentService.csproj", "{24B44DE3-01E0-4E43-9D85-BF9D96B3E07E}"
 EndProject
