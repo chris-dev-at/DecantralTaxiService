@@ -1,13 +1,14 @@
 ﻿using RabbitMQ.Client.Events;
+using Communications.ExchangeMessages;
 
 namespace Communications;
 
 public class MessageArgs
 {
-    public string Message { get; }
+    public ExchangeMessage Message { get; }
     public BasicDeliverEventArgs BasicDeliverEventArgs { get; }
     
-    public MessageArgs(string message, BasicDeliverEventArgs bde)
+    public MessageArgs(ExchangeMessage message, BasicDeliverEventArgs bde)
     {
         Message = message;
         BasicDeliverEventArgs = bde;
