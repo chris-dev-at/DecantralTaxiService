@@ -14,32 +14,49 @@ class Program
             eArgs.Cancel = true;
         };
 
-        //Log for now to Console
+        //Code
+        var locationSystem = new LocationSystem(GlobalConfig.GlobalLegth, GlobalConfig.GlobalWidth);
+        
         var f = await CommunicationHandlerFactory.Initialize("rabbitmq");
         var consumerHandler = await f.CreateConsumerHandler("location_queue");
 
-        consumerHandler.OnMessage += Consume;
+        consumerHandler.OnMessage += locationSystem.Consume!;
 
+        
+        
         //keep alive
         _quitEvent.WaitOne();
     }
     
-    public static void Consume(object sender, MessageArgs e)
+    
+
+    public class LocationSystem
     {
-        Console.WriteLine($"Processing Message: {e.Message.Type}");
+        public string[,] Grid { get; set; }
 
-        switch (e.Message.Type)
+        public LocationSystem(int length, int width)
         {
-            case MessageType.LocationUpdate:
-                Console.WriteLine("Casting to LocationUpdateMessage");
-                var locationMessage = e.Message as LocationUpdateMessage;
-                Console.WriteLine($"Location Update: {locationMessage?.Location.X}, {locationMessage?.Location.Y} for driver {locationMessage?.DriverId}");
-                break;
-            default:
-                Console.WriteLine("Unknown message type");
-                break;
+            this.Grid = new string[length, width];
         }
-
-        Console.WriteLine("Message processed");
+        
+        public void Consume(object sender, MessageArgs e)
+        {
+            switch (e.Message.Type)
+            {
+                case MessageType.LocationUpdate:
+                    var locationMessage = e.Message as LocationUpdateMessage;
+                    Console.WriteLine($"Location Update: {locationMessage?.Location.X}, {locationMessage?.Location.Y} for driver {locationMessage?.DriverId}");
+                    break;
+                default:
+                    Console.WriteLine("Service does not handle this message type: " + e.Message.Type);
+                    break;
+            }
+        }
+        
+        public void UpdateLocationCall(LocationUpdateMessage message)
+        {
+            Grid[message.Location.X, message.Location.Y] = message.DriverId;
+        }
+        
     }
 }
