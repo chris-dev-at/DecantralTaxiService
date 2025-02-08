@@ -1,5 +1,6 @@
 ﻿using Communications;
 using Communications.ExchangeMessages;
+using Communications.Models;
 
 namespace LocationService;
 
@@ -15,7 +16,8 @@ class Program
         };
 
         //Code
-        var locationSystem = new LocationSystem(GlobalConfig.GlobalLegth, GlobalConfig.GlobalWidth);
+        var producerHandler = await (await CommunicationHandlerFactory.Initialize("rabbitmq")).CreateProducerHandler("taxi.topic");
+        var locationSystem = new LocationSystem(producerHandler);
         
         var f = await CommunicationHandlerFactory.Initialize("rabbitmq");
         var consumerHandler = await f.CreateConsumerHandler("location_queue");
@@ -32,11 +34,13 @@ class Program
 
     public class LocationSystem
     {
-        public string[,] Grid { get; set; }
+        public List<LocationEntry> Drivers { get; set; }
+        public ProducerHandler ProducerHandler { get; set; }
 
-        public LocationSystem(int length, int width)
+        public LocationSystem(ProducerHandler producerHandler)
         {
-            this.Grid = new string[length, width];
+            this.Drivers = new List<LocationEntry>();
+            this.ProducerHandler = producerHandler;
         }
         
         public void Consume(object sender, MessageArgs e)
@@ -45,7 +49,13 @@ class Program
             {
                 case MessageType.LocationUpdate:
                     var locationMessage = e.Message as LocationUpdateMessage;
-                    Console.WriteLine($"Location Update: {locationMessage?.Location.X}, {locationMessage?.Location.Y} for driver {locationMessage?.DriverId}");
+                    Console.WriteLine($"Location Update: {locationMessage?.Driver.Location.X}, {locationMessage?.Driver.Location.Y} for driver {locationMessage?.Driver.Id}");
+                    UpdateLocationCall(locationMessage!);
+                    break;
+                case MessageType.RequestRide:
+                    var requestRideMessage = e.Message as RequestRideMessage;
+                    Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.PassengerId} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
+                    RequestRideCall(requestRideMessage!);
                     break;
                 default:
                     Console.WriteLine("Service does not handle this message type: " + e.Message.Type);
@@ -55,7 +65,43 @@ class Program
         
         public void UpdateLocationCall(LocationUpdateMessage message)
         {
-            Grid[message.Location.X, message.Location.Y] = message.DriverId;
+            if(message.Driver.Location.X > GlobalConfig.GlobalLegth || message.Driver.Location.Y > GlobalConfig.GlobalWidth)
+            {
+                Console.WriteLine("Invalid location update");
+                return;
+            }
+            
+            this.Drivers.RemoveAll(le => le.Driver.Id == message.Driver.Id);
+            this.Drivers.Add(new LocationEntry()
+            {
+                Driver = message.Driver,
+                Time = DateTime.Now
+            }); 
+            
+            ClearOldEntries(); 
+        }
+
+        public async Task RequestRideCall(RequestRideMessage message)
+        {
+            //get all drivers in range of GlobalConfig.MaxAcceptableDistance and available
+            var driversInRange = this.Drivers.Where(x => 
+                x.Driver.State == DriverState.Available && 
+                x.Driver.Location.Distance(message.Ride.StartLocation) < GlobalConfig.MaxAcceptableDistance)
+                .ToList();
+            
+            var requestDriverMessage = new RequestDriverMessage()
+            {
+                Ride = message.Ride,
+                Drivers = driversInRange.Select(x => x.Driver.Id).ToList()
+            };
+            
+            //Send message to DriverService
+            await ProducerHandler.SendMessageAsync("driver", requestDriverMessage);
+        }
+
+        public void ClearOldEntries() //In case of a driver disconnecting
+        {
+            this.Drivers.RemoveAll(x => x.Time < DateTime.Now.AddSeconds(-5)); //Remove all entries older than 5 seconds
         }
         
     }

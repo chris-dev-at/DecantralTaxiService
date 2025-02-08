@@ -22,8 +22,12 @@ app.MapGet("/publish/location", async() =>
 
     var msg = new LocationUpdateMessage()
     {
-        Location = new Location() { X = 1, Y = 1},
-        DriverId = "hokuspokus"
+        Driver = new Driver()
+        {
+            Location = new Location() { X = 1, Y = 1},
+            Id = $"hokuspokus{new Random().Next(0, 1000)}",
+            State = DriverState.Available
+        }
     };
     
     await producerHandler.SendMessageAsync("location", msg);
