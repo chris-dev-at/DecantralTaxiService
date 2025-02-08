@@ -19,7 +19,7 @@ class Program
         var locationSystem = new PaymentSystem(producerHandler);
         
         var f = await CommunicationHandlerFactory.Initialize("rabbitmq");
-        var consumerHandler = await f.CreateConsumerHandler("location_queue");
+        var consumerHandler = await f.CreateConsumerHandler("payment_queue");
 
         consumerHandler.OnMessage += locationSystem.Consume!;
 
@@ -44,7 +44,7 @@ class Program
             {
                 case MessageType.RideComplete:
                     var rideCompleteMessage = e.Message as RideCompleteMessage;
-                    Console.WriteLine($"Ride Completed: {rideCompleteMessage?.Ride.PassengerId}, {rideCompleteMessage?.Ride.DriverId} for driver {rideCompleteMessage?.Ride.Distance}");
+                    Console.WriteLine($"Ride Completed: {rideCompleteMessage?.Ride.PassengerId}, {rideCompleteMessage?.Ride.Driver.Id} for driver {rideCompleteMessage?.Ride.Distance}");
                     RideCompleteCall(rideCompleteMessage!);
                     break;
                 default:
@@ -57,7 +57,7 @@ class Program
         {
             var invoice = new InvoiceEnquiryMessage()
             {
-                Amount = message.Ride.Distance * message.Ride.PricePerKm,
+                Amount = message.Ride.Distance * message.Ride.Driver.PricePerKm,
             };
             await ProducerHandler.SendMessageAsync("payment", invoice);
         }

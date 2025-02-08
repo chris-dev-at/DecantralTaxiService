@@ -74,6 +74,13 @@ public class ConsumerHandler
             return false;
         }
         
+        /* Could be fixed like:
+         *
+         *   Create Wrapper for ExchangeMessage (maybe Cloudevents wasn't such a bad idea)
+         *   Then rely on TypeHandeling from Newtonsoft.Json
+         *
+         *   Benefit: Automatically deserialize to correct message type (no need for switch)
+         */
         //Load Actual Message (IT IS UGLY; IK; BUT LEAVE ME ALONE I SEARCHED FOR AN HOUR STRAIGHT ON WHY MY DATA WAS NULL)
         switch(msg.Type)
         {

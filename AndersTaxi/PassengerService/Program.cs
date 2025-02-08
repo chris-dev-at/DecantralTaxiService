@@ -24,7 +24,7 @@ app.MapGet("/publish/location", async() =>
     {
         Driver = new Driver()
         {
-            Location = new Location() { X = 1, Y = 1},
+            Location = new Location() { X = new Random().Next(0, GlobalConfig.GlobalLength), Y = new Random().Next(0, GlobalConfig.GlobalWidth)},
             Id = $"hokuspokus{new Random().Next(0, 1000)}",
             State = DriverState.Available
         }

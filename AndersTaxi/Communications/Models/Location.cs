@@ -13,4 +13,6 @@ public class Location
     {
         return Distance(this, other);
     }
+
+    public override string ToString() => $"X: {this.X}, Y: {this.Y}";
 }

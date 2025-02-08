@@ -1,0 +1,237 @@
+﻿@using Simulator.Components.Services
+@using Communications
+@using Communications.Models
+@inject EventStreamSimulator ess
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="worldmap-container">
+    <div class="grid-container" style="--columns: @GlobalConfig.GlobalLength; --rows: @GlobalConfig.GlobalWidth;">
+        @for (int y = 0; y < GlobalConfig.GlobalWidth; y++)
+        {
+            @for (int x = 0; x < GlobalConfig.GlobalLength; x++)
+            {
+                var driversHere = ess.LocationSystem.Drivers?
+                    .Where(d => d.Driver.Location.X == x && d.Driver.Location.Y == y)
+                    .ToList();
+
+                <div class="grid-cell" style="grid-column: @(x+1); grid-row: @(y+1);">
+                    @if (driversHere?.Count > 0)
+                    {
+                        <div class="drivers-container">
+                            @foreach (var driver in driversHere)
+                            {
+                                <div class="driver-marker @GetDriverStateClass(driver.Driver.State)">
+                                    <div class="driver-tooltip">@driver.Driver.Id (@driver.Driver.State)</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    <div class="popup-controls">
+        <label class="toggle">
+            <input type="checkbox" checked="@_autoUpdateEnabled" @onchange="ToggleAutoUpdate" />
+            <span class="toggle-label">Auto Update</span>
+        </label>
+        <button @onclick="ManualUpdate" class="btn">Update Now</button>
+        <!--button @onclick="CloseWindow" class="btn btn-close">Close</!--button-->
+    </div>
+</div>
+
+
+@code {
+    private CancellationTokenSource _cts = new();
+    private bool _autoUpdateEnabled = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await StartAutoUpdate(_cts.Token);
+    }
+
+    private async Task StartAutoUpdate(CancellationToken token)
+    {
+        //Dont await here, else page will load forever
+        Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(1000, token);
+            }
+        }, token);
+    }
+
+    private async Task ToggleAutoUpdate(ChangeEventArgs e)
+    {
+        _autoUpdateEnabled = (bool)e.Value!;
+        if (_autoUpdateEnabled)
+        {
+            _cts = new CancellationTokenSource();
+            await StartAutoUpdate(_cts.Token);
+        }
+        else
+        {
+            _cts.Cancel();
+        }
+    }
+
+    private async Task ManualUpdate()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetDriverStateClass(DriverState state)
+    {
+        return state switch
+        {
+            DriverState.Unavailable => "state-unavailable",
+            DriverState.Available => "state-available",
+            DriverState.OfferedRide => "state-offeredride",
+            DriverState.OnRouteToPassenger => "state-onroutetopassenger",
+            DriverState.OnRouteToDestination => "state-onroutetodestination",
+            _ => ""
+        };
+    }
+
+    private async Task CloseWindow()
+    {
+        await JSRuntime.InvokeVoidAsync("window.close");
+    }
+    
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}
+
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(var(--columns), 20px);
+        grid-template-rows: repeat(var(--rows), 20px);
+        gap: 1px;
+        background-color: #cccccc;
+        padding: 1px;
+        width: fit-content;
+    }
+
+    .grid-cell {
+        background-color: white;
+        position: relative;
+    }
+
+    .drivers-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        padding: 1px;
+        
+    }
+
+    .driver-marker {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        position: relative;
+    }
+
+    .driver-marker:hover .driver-tooltip {
+        visibility: visible;
+    }
+
+    .driver-tooltip {
+        visibility: hidden;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        text-align: center;
+        padding: 4px;
+        border-radius: 4px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    .state-unavailable { background-color: #808080; }
+    .state-available { background-color: #00ff00; }
+    .state-offeredride { background-color: #ffa500; }
+    .state-onroutetopassenger { background-color: #800080; }
+    .state-onroutetodestination { background-color: #0000ff; }
+
+
+    /* Toggle Style */
+    .controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .toggle input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+        background-color: #0056b3;
+    }
+
+    .toggle-label {
+        font-size: 16px;
+    }
+    
+    /* Popup Style */
+    .popup-controls {
+        padding: 10px;
+        width: fit-content;
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-close {
+        background-color: #dc3545;
+    }
+
+    .btn-close:hover {
+        background-color: #bb2d3b;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    
+</style>

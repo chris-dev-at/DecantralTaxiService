@@ -1,7 +1,144 @@
-﻿@page "/"
+﻿@using Simulator.Components.BuildingBlocks
+@using Simulator.Components.Services
+@inject HttpClient HttpClient
+@inject IJSRuntime JsRuntime
+@inject EventStreamSimulator ess
+@page "/"
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="main-container">
+    <!-- Driver Manipulation Section (1 part) -->
+    <div class="section driver-section">
+        <h2>Driver Manipulation</h2>
+        <DriverManipulator/>
+    </div>
 
-Welcome to your new app.
+    <!-- Map Section (2 parts) -->
+    <div class="section map-section">
+        <h2>Live Map</h2>
+        
+        @if (_MapPopupOpen)
+        {
+            <button @onclick="() => { _MapPopupOpen = false; }" class="btn">Show Map Here</button>
+            <br/>
+            <button @onclick="OpenMapPopup" class="btn">Open Map Popup</button>
+
+        }
+        else
+        {
+            <WorldMapDisplay/>
+            
+            <button @onclick="() => { _MapPopupOpen = true; }" class="btn">Hide Map</button>
+        }
+    </div>
+
+    <!-- Passenger Simulation Section (1 part) -->
+    <div class="section passenger-section">
+        <h2>Passenger Simulation</h2>
+        <PassengerManipulator/>
+    </div>
+</div>
+
+
+<script>
+    function openMapWindow(url, windowName, width, height) {
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+
+        window.open(url, windowName,
+            `toolbar=no, location=no, directories=no, status=no, menubar=no, 
+         scrollbars=yes, resizable=yes, width=${width}, height=${height}, 
+         top=${top}, left=${left}`);
+    }    
+</script>
+
+
+@code {
+    private bool _MapPopupOpen = true;
+    
+    private async Task RequestRest(string url)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        var response = await HttpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task SendTestMessage()
+    {
+        await RequestRest("http://passengerservice:8080/publish");
+    }
+
+    private async Task SendTestLocationUpdate()
+    {
+        await RequestRest("http://passengerservice:8080/publish/location");
+    }
+    
+    private async Task OpenMapPopup()
+    {
+        _MapPopupOpen = true;
+        await JsRuntime.InvokeVoidAsync("openMapWindow", "/mappopup", "MapWindow", 629, 680);
+    }
+}
+
+<style>
+    .main-container {
+        display: grid;
+        @if (!_MapPopupOpen)
+        {
+            @("grid-template-columns: 1fr 2fr 1fr;")
+        }
+        else
+        {
+            @("grid-template-columns: 2fr 1fr 2fr;")
+        }
+        gap: 20px;
+        height: 100vh;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .section {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .driver-section {
+        overflow-y: auto;
+    }
+
+    .map-section {
+        min-height: 600px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .passenger-section {
+        overflow-y: auto;
+    }
+
+    h2 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #2c3e50;
+        font-size: 1.4rem;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+</style>

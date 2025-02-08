@@ -27,6 +27,10 @@ class Program
             //Log queue (with # for all messages)
             CreateAndBindQueue(channel, "taxi.topic", "log_queue", "#");
 
+            //For Simulator make second # queue
+            CreateAndBindQueue(channel, "taxi.topic", "simulator_queue", "#");
+            
+            
             Console.WriteLine("RabbitMQ infrastructure created!");
         }
     }
