@@ -111,7 +111,7 @@ public class ConsumerHandler
         }
         
         //Execute event
-        Console.WriteLine($"Received Message: {msg.Type}");
+        //Console.WriteLine($"Received Message: {msg.Type}");
         OnMessage?.Invoke(this, new MessageArgs(msg, ea));
 
         return true;

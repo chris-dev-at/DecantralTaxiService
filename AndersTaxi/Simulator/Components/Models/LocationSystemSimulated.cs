@@ -54,8 +54,9 @@ public class LocationSystemSimulated : IDisposable
     {
         //get all drivers in range of GlobalConfig.MaxAcceptableDistance and available
         var driversInRange = this.Drivers.Where(x => 
-            x.Driver.State == DriverState.Available && 
-            x.Driver.Location.Distance(message.Ride.StartLocation) < GlobalConfig.MaxAcceptableDistance)
+                x.Driver.State == DriverState.Available && 
+                x.Driver.PricePerKm <= message.Ride.Passenger.MaxPricePerKm &&
+                x.Driver.Location.Distance(message.Ride.StartLocation) < GlobalConfig.MaxAcceptableDistance)
             .ToList();
         
         //Do nothing for now

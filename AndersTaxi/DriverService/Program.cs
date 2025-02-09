@@ -40,3 +40,9 @@ app.MapGet("/updateLocation", async (string id, int x, int y, string state) =>
 });
 
 app.Run();
+
+
+async Task Consume(object sender, MessageArgs e)
+{
+    
+}

@@ -15,6 +15,7 @@ public class EventStreamSimulator
     public LocationSystemSimulated LocationSystem = new LocationSystemSimulated();
 
     public List<SimDriver> SimDrivers = new List<SimDriver>();
+    public List<SimPassenger> SimPassengers = new List<SimPassenger>();
     
     public EventStreamSimulator(CommunicationHandlerFactory communicationHandlerFactory, ConsumerHandler consumerHandler)
     {
@@ -30,12 +31,12 @@ public class EventStreamSimulator
         {
             case MessageType.LocationUpdate:
                 var locationMessage = e.Message as LocationUpdateMessage;
-                Console.WriteLine($"Location Update: {locationMessage?.Driver.Location.X}, {locationMessage?.Driver.Location.Y} for driver {locationMessage?.Driver.Id}");
+                //Console.WriteLine($"Location Update: {locationMessage?.Driver.Location.X}, {locationMessage?.Driver.Location.Y} for driver {locationMessage?.Driver.Id}");
                 LocationSystem.UpdateLocationCall(locationMessage!);
                 break;
             case MessageType.RequestRide:
                 var requestRideMessage = e.Message as RequestRideMessage;
-                Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.PassengerId} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
+                //Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.PassengerId} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
                 LocationSystem.RequestRideCall(requestRideMessage!);
                 break;
             default:

@@ -43,7 +43,7 @@ public class LocationSystem : IDisposable
                 break;
             case MessageType.RequestRide:
                 var requestRideMessage = e.Message as RequestRideMessage;
-                Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.PassengerId} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
+                Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.Passenger.Id} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
                 RequestRideCall(requestRideMessage!);
                 break;
             default:
@@ -76,6 +76,7 @@ public class LocationSystem : IDisposable
         //get all drivers in range of GlobalConfig.MaxAcceptableDistance and available
         var driversInRange = this.Drivers.Where(x => 
             x.Driver.State == DriverState.Available && 
+            x.Driver.PricePerKm <= message.Ride.Passenger.MaxPricePerKm &&
             x.Driver.Location.Distance(message.Ride.StartLocation) < GlobalConfig.MaxAcceptableDistance)
             .ToList();
         

@@ -1,0 +1,240 @@
+﻿@using Communications
+@using Simulator.Components.Services
+@using Communications.Models
+@using Simulator.Components.Models
+@inject EventStreamSimulator ess
+@inject HttpClient HttpClient
+
+<div class="passenger-section">
+    <h3>Passenger Simulation</h3>
+    
+    <div class="passenger-controls">
+        <div class="location-inputs">
+            <div class="location-group">
+                <h4>Start Location</h4>
+                <div class="coord-input">
+                    <label>X:</label>
+                    <input type="number" @bind="_startX" min="0" max="@GlobalConfig.GlobalLength" />
+                    <button @onclick="RandomizeStart" class="btn btn-random">🎲</button>
+                </div>
+                <div class="coord-input">
+                    <label>Y:</label>
+                    <input type="number" @bind="_startY" min="0" max="@GlobalConfig.GlobalWidth" />
+                </div>
+            </div>
+
+            <div class="location-group">
+                <h4>End Location</h4>
+                <div class="coord-input">
+                    <label>X:</label>
+                    <input type="number" @bind="_endX" min="0" max="@GlobalConfig.GlobalLength" />
+                    <button @onclick="RandomizeEnd" class="btn btn-random">🎲</button>
+                </div>
+                <div class="coord-input">
+                    <label>Y:</label>
+                    <input type="number" @bind="_endY" min="0" max="@GlobalConfig.GlobalWidth" />
+                </div>
+            </div>
+        </div>
+
+        <div class="price-input">
+            <label>Max €/KM:</label>
+            <input type="number" @bind="_maxPrice" 
+                   min="@GlobalConfig.MinPricePerKm" 
+                   max="@GlobalConfig.MaxPricePerKm" 
+                   step="0.01" />
+        </div>
+
+        <button @onclick="CreatePassenger" class="btn btn-create">Create Passenger</button>
+    </div>
+
+    <div class="active-passengers">
+        <div class="passenger-list">
+            @foreach (var passenger in ess.SimPassengers)
+            {
+                <div class="passenger-item">
+                    <div class="passenger-info">
+                        <span class="passenger-id">@passenger.Id</span>
+                        <span class="passenger-price">(Max: @passenger.MaxPricePerKm.ToString("0.00")€/km)</span>
+                    </div>
+                    <div class="passenger-route">
+                        Start: (@passenger.CurrentRide.StartLocation.X, @passenger.CurrentRide.StartLocation.Y) → 
+                        End: (@passenger.CurrentRide.EndLocation.X, @passenger.CurrentRide.EndLocation.Y)
+                    </div>
+                    @if (GetRideStatus(passenger) != null)
+                    {
+                        <div class="ride-status @GetRideStatusClass(GetRideStatus(passenger))">
+                            @GetRideStatusDisplay(GetRideStatus(passenger))
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _startX;
+    private int _startY;
+    private int _endX;
+    private int _endY;
+    private double _maxPrice = GlobalConfig.MaxPricePerKm;
+    private Random _random = new();
+
+    private void RandomizeStart()
+    {
+        _startX = _random.Next(0, GlobalConfig.GlobalLength);
+        _startY = _random.Next(0, GlobalConfig.GlobalWidth);
+    }
+
+    private void RandomizeEnd()
+    {
+        _endX = _random.Next(0, GlobalConfig.GlobalLength);
+        _endY = _random.Next(0, GlobalConfig.GlobalWidth);
+    }
+
+    private void CreatePassenger()
+    {
+        if (_startX == _endX && _startY == _endY) return;
+        if (ess.SimDrivers.Count >= 9000) return;
+        var passenger = new SimPassenger(
+            id: GeneratePassengerId(),
+            startLocation: new Location { X = _startX, Y = _startY },
+            destination: new Location { X = _endX, Y = _endY },
+            maxPrice: _maxPrice,
+            client: HttpClient
+        );
+
+        ess.SimPassengers.Add(passenger);
+        StateHasChanged();
+    }
+
+    private string GeneratePassengerId()
+    {
+        string newId;
+        do
+        {
+            newId = $"Passenger{_random.Next(1000, 9999)}";
+        } while (ess.SimPassengers.Any(p => p.Id == newId));
+        return newId;
+    }
+
+    private string GetRideStatus(SimPassenger passenger)
+    {
+        var status = passenger.CurrentRide?.Driver?.State;
+        if(status == null) return "Searching";
+        if(status == DriverState.OfferedRide) return "DriverAssigned";
+        if(status == DriverState.OnRouteToPassenger) return "DriverAssigned";
+        if(status == DriverState.OnRouteToDestination) return "InTransit";
+        if(status == DriverState.Available) return "Completed";
+        return "";
+    }
+
+    private string GetRideStatusClass(string status)
+    {
+        return status?.Replace(" ", "-").ToLower();
+    }
+
+    private string GetRideStatusDisplay(string status)
+    {
+        return status switch
+        {
+            "Searching" => "🔍 Searching for driver",
+            "DriverAssigned" => "🚕 Driver on the way",
+            "InTransit" => "🚗 On route",
+            "Completed" => "✅ Completed",
+            _ => "Waiting..."
+        };
+    }
+}
+
+<style>
+    .passenger-section {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+    }
+
+    .location-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .coord-input {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.5rem 0;
+    }
+
+    .coord-input input {
+        width: 70px;
+        padding: 0.25rem;
+    }
+
+    .btn-random {
+        padding: 0.25rem 0.5rem;
+        background-color: #e0e0e0;
+    }
+
+    .price-input {
+        margin: 1rem 0;
+    }
+
+    .price-input input {
+        width: 120px;
+        padding: 0.25rem;
+        margin-left: 0.5rem;
+    }
+
+    .active-passengers {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .passenger-list {
+        height: 435px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        padding: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .passenger-item {
+        padding: 1rem;
+        margin: 0.5rem 0;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .passenger-info {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .passenger-controls {
+        flex-shrink: 0;
+        margin-bottom: 1rem;
+    }
+
+    .ride-status {
+        margin-top: 0.5rem;
+        padding: 0.25rem;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .searching { background-color: #B3E5FC; }
+    .driverassigned { background-color: #C8E6C9; }
+    .intransit { background-color: #FFF9C4; }
+    .completed { background-color: #E0E0E0; }
+</style>

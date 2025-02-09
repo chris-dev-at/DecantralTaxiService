@@ -40,6 +40,12 @@
     </div>
 </div>
 
+<button @onclick='() => 
+        { 
+            //Since Docker restart is set to always, this will restart the application
+            Environment.Exit(0);
+        }' style="position: absolute; top: 0; right: 0; background-color: red; color: white; border: none;">Restart Application</button>
+
 
 <script>
     function openMapWindow(url, windowName, width, height) {

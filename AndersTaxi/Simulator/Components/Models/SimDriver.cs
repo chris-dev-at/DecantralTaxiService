@@ -29,7 +29,7 @@ public class SimDriver : Driver, IDisposable
             while (!token.IsCancellationRequested)
             {
                 Tick();
-                await Task.Delay(1000);
+                await Task.Delay(GlobalConfig.TimeBetweenTicksMs);
             }
         }, token);
     }

@@ -1,6 +1,7 @@
 ﻿@using Simulator.Components.Services
 @using Communications
 @using Communications.Models
+@using Simulator.Components.Models
 @inject EventStreamSimulator ess
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -14,7 +15,7 @@
                 var driversHere = GetSnapshot()?
                     .Where(d => d.Driver.Location.X == x && d.Driver.Location.Y == y)
                     .ToList();
-
+                
                 <div class="grid-cell" style="grid-column: @(x+1); grid-row: @(y+1);">
                     @if (driversHere?.Count > 0)
                     {

@@ -44,7 +44,7 @@ class Program
             {
                 case MessageType.RideComplete:
                     var rideCompleteMessage = e.Message as RideCompleteMessage;
-                    Console.WriteLine($"Ride Completed: {rideCompleteMessage?.Ride.PassengerId}, {rideCompleteMessage?.Ride.Driver.Id} for driver {rideCompleteMessage?.Ride.Distance}");
+                    Console.WriteLine($"Ride Completed: {rideCompleteMessage?.Ride.Passenger.Id}, {rideCompleteMessage?.Ride.Driver.Id} for driver {rideCompleteMessage?.Ride.Distance}");
                     RideCompleteCall(rideCompleteMessage!);
                     break;
                 default:

@@ -72,6 +72,7 @@
     build:
       context: .
       dockerfile: Simulator/Dockerfile
+    restart: always
     ports:
       - "8000:8080"
 
