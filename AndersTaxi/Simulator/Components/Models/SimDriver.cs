@@ -1,4 +1,6 @@
-﻿using Communications;
+﻿using System.Net;
+using Communications;
+using Communications.ExchangeMessages;
 using Communications.Models;
 
 namespace Simulator.Components.Models;
@@ -9,6 +11,8 @@ public class SimDriver : Driver, IDisposable
     private CancellationTokenSource _cts = new();
     private Random _random = new();
     private HttpClient _client;
+    
+    public Ride CurrentRide { get; set; }
     
     public SimDriver(string id, Location location, double pricePerKm, HttpClient client)
     {
@@ -39,28 +43,121 @@ public class SimDriver : Driver, IDisposable
         //Default Behavior of driver device
         await UpdateLocation();
         
-        
-        
         //Actions by driver (simulated)
-        //move driver randomly
-        var move = _random.Next(0, 5);
-        switch (move)
+        switch (this.State)
         {
-            case 0:
-                MoveUp();
+            case DriverState.Unavailable:
+                await Task.Delay(5000);
+                State = DriverState.Available;
                 break;
-            case 1:
-                MoveDown();
+            case DriverState.Available:
+                MoveRandom();
+                await CheckRides();
                 break;
-            case 2:
-                MoveLeft();
+            case DriverState.OfferedRide:
+                //Do nothing (no longer in use)
                 break;
-            case 3:
-                MoveRight();
+            case DriverState.OnRouteToPassenger:
+                var arrived1 = MoveTowards(CurrentRide.StartLocation);
+                if(arrived1)
+                    State = DriverState.OnRouteToDestination;
                 break;
-            case 4:
-                //Do nothing
+            case DriverState.OnRouteToDestination:
+                var arrived2 = MoveTowards(CurrentRide.EndLocation);
+                if (arrived2)
+                {
+                    await CompleteRide();
+                    State = DriverState.Unavailable;
+                }
                 break;
+        }
+        
+    }
+
+
+    public async Task CompleteRide()
+    {
+        var res = await _client.GetAsync($"http://driverservice:8080/completeRide?passengerId={CurrentRide.Passenger.Id}&driverId={Id}&distance={CurrentRide.Distance}&pricePerKm={PricePerKm}");
+        if (res.StatusCode == HttpStatusCode.OK)
+        {
+            State = DriverState.Available;
+            CurrentRide = null;
+        }
+    }
+    
+    public async Task CheckRides()
+    {
+        //get all open requests
+        var openRequests = await _client.GetFromJsonAsync<List<RequestDriverMessage>>($"http://driverservice:8080/getOpenRequests?id={Id}");
+        
+        //90% Chance to accept a ride
+        if (openRequests.Count > 0 && _random.Next(0, 100) < 90)
+        {
+            var request = openRequests.First();
+
+            var res = await _client.GetAsync($"http://driverservice:8080/acceptRequest?driverId={Id}&passengerId={request.Ride.Passenger.Id}");
+            if (res.StatusCode == HttpStatusCode.OK)
+            {
+                State = DriverState.OnRouteToPassenger;
+                CurrentRide = request.Ride;
+            }
+            if(res.StatusCode == HttpStatusCode.NotFound)
+                State = DriverState.Available;
+        }
+    }
+    
+    
+    //return true if driver is at location
+    public bool MoveTowards(Location location)
+    {
+        if (CurrentRide != null)
+            CurrentRide.Distance++;
+        
+        if (Location.X < location.X)
+        {
+            MoveRight();
+        }
+        else if (Location.X > location.X)
+        {
+            MoveLeft();
+        }
+        else if (Location.Y < location.Y)
+        {
+            MoveUp();
+        }
+        else if (Location.Y > location.Y)
+        {
+            MoveDown();
+        }
+        return Location.X == location.X && Location.Y == location.Y;
+    }
+    public void MoveRandom()
+    {
+        //move driver randomly
+        var move = _random.Next(0, 100);
+        if (move < 20)
+        {
+            MoveUp();
+        }
+        else if (move < 40)
+        {
+            MoveDown();
+        }
+        else if (move < 60)
+        {
+            MoveLeft();
+        }
+        else if (move < 80)
+        {
+            MoveRight();
+        }
+        else if (move < 97)
+        {
+            //Do nothing
+        }
+        else
+        {
+            State = DriverState.Unavailable;
         }
     }
     

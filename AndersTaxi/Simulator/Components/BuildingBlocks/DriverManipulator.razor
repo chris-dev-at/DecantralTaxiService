@@ -19,7 +19,7 @@
             @foreach (var driver in ess.SimDrivers)
             {
                 <div class="driver-item @GetStateClass(driver.State)">
-                    <span class="driver-id">@driver.Id <span class="driver-state">(@driver.State)</span></span>
+                    <span class="driver-id">@driver.Id <span class="driver-state">(@driver.State) @driver.PricePerKm.ToString("0.00")€/km</span></span>
                     <button @onclick="() => DeleteDriver(driver.Id)" class="btn btn-delete">Delete</button>
                 </div>
             }
@@ -30,6 +30,19 @@
 @code {
     private int _newDriversCount = 10;
     private Random _random = new Random();
+
+    protected override void OnInitialized()
+    {
+        Task.Run(async() =>
+        {
+            while (true) //zu meiner Verteidigung: es ist 4:12 und will es nicht mehr so elegant wie bei WorldMap machen
+            {
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(GlobalConfig.TimeBetweenTicksMs);
+
+            }
+        });
+    }
 
     private void DeleteDriver(string driverId)
     {

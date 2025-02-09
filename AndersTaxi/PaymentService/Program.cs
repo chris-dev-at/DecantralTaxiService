@@ -44,7 +44,7 @@ class Program
             {
                 case MessageType.RideComplete:
                     var rideCompleteMessage = e.Message as RideCompleteMessage;
-                    Console.WriteLine($"Ride Completed: {rideCompleteMessage?.Ride.Passenger.Id}, {rideCompleteMessage?.Ride.Driver.Id} for driver {rideCompleteMessage?.Ride.Distance}");
+                    //Console.WriteLine($"Ride Completed: {rideCompleteMessage?.Ride.Passenger.Id}, {rideCompleteMessage?.Ride.Driver.Id} for driver {rideCompleteMessage?.Ride.Distance}");
                     RideCompleteCall(rideCompleteMessage!);
                     break;
                 default:
@@ -58,8 +58,9 @@ class Program
             var invoice = new InvoiceEnquiryMessage()
             {
                 Amount = message.Ride.Distance * message.Ride.Driver.PricePerKm,
+                Passenger = message.Ride.Passenger,
             };
-            await ProducerHandler.SendMessageAsync("payment", invoice);
+            await ProducerHandler.SendMessageAsync("passenger", invoice);
         }
     }
 }

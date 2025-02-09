@@ -25,7 +25,7 @@ public class ProducerHandler
             routingKey: routingKey,
             body: body);
         
-        Console.WriteLine($"Sent message: {message}");
+        //Console.WriteLine($"Sent message: {message}");
     }
 
     public async Task SendMessageAsync(string routingKey, ExchangeMessage message) =>

@@ -38,12 +38,12 @@ public class LocationSystem : IDisposable
         {
             case MessageType.LocationUpdate:
                 var locationMessage = e.Message as LocationUpdateMessage;
-                Console.WriteLine($"Location Update: {locationMessage?.Driver.Location.X}, {locationMessage?.Driver.Location.Y} for driver {locationMessage?.Driver.Id}");
+                //Console.WriteLine($"Location Update: {locationMessage?.Driver.Location.X}, {locationMessage?.Driver.Location.Y} for driver {locationMessage?.Driver.Id}");
                 UpdateLocationCall(locationMessage!);
                 break;
             case MessageType.RequestRide:
                 var requestRideMessage = e.Message as RequestRideMessage;
-                Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.Passenger.Id} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
+                //Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.Passenger.Id} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
                 RequestRideCall(requestRideMessage!);
                 break;
             default:
@@ -73,7 +73,7 @@ public class LocationSystem : IDisposable
 
     public async Task RequestRideCall(RequestRideMessage message)
     {
-        //get all drivers in range of GlobalConfig.MaxAcceptableDistance and available
+        //get all drivers in range of GlobalConfig.MaxAcceptableDistance and available and within passenger's price range
         var driversInRange = this.Drivers.Where(x => 
             x.Driver.State == DriverState.Available && 
             x.Driver.PricePerKm <= message.Ride.Passenger.MaxPricePerKm &&

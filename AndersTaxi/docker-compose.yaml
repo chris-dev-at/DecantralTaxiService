@@ -1,6 +1,7 @@
 ﻿services:
   locationservice:
     image: locationservice
+    restart: always
     build:
       context: .
       dockerfile: LocationService/Dockerfile
@@ -9,6 +10,7 @@
 
   driverservice:
     image: driverservice
+    restart: always
     build:
       context: .
       dockerfile: DriverService/Dockerfile
@@ -19,6 +21,7 @@
 
   logservice:
     image: logservice
+    restart: always
     build:
       context: .
       dockerfile: LogService/Dockerfile
@@ -27,6 +30,7 @@
 
   passengerservice:
     image: passengerservice
+    restart: always
     build:
       context: .
       dockerfile: PassengerService/Dockerfile
@@ -37,6 +41,7 @@
 
   paymentservice:
     image: paymentservice
+    restart: always
     build:
       context: .
       dockerfile: PaymentService/Dockerfile
@@ -46,6 +51,7 @@
   rabbitmq:
     image: rabbitmq:3-management
     hostname: rabbitmq
+    restart: always
     ports:
       - "5672:5672"
       - "15672:15672"

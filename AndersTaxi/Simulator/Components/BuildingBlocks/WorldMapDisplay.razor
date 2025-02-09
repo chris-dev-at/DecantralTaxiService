@@ -69,7 +69,7 @@
             while (!token.IsCancellationRequested)
             {
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(1000, token);
+                await Task.Delay(GlobalConfig.TimeBetweenTicksMs, token);
             }
         }, token);
     }

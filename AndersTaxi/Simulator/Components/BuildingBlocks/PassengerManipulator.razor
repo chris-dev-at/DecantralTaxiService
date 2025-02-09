@@ -3,23 +3,29 @@
 @using Communications.Models
 @using Simulator.Components.Models
 @inject EventStreamSimulator ess
+@inject IJSRuntime JsRuntime
 @inject HttpClient HttpClient
 
 <div class="passenger-section">
-    <h3>Passenger Simulation</h3>
+    <h3>Passenger Management</h3>
     
     <div class="passenger-controls">
+        <div class="passengerid-input">
+            <label>Passenger Name</label>
+            <input type="text" @bind="_passengerId" />
+            <button @onclick="RandomizeName" class="btn btn-random">🎲</button>
+        </div>
         <div class="location-inputs">
             <div class="location-group">
                 <h4>Start Location</h4>
                 <div class="coord-input">
                     <label>X:</label>
-                    <input type="number" @bind="_startX" min="0" max="@GlobalConfig.GlobalLength" />
+                    <input type="number" @bind="_startX" min="0" max="@GlobalConfig.GlobalLength"/>
                     <button @onclick="RandomizeStart" class="btn btn-random">🎲</button>
                 </div>
                 <div class="coord-input">
                     <label>Y:</label>
-                    <input type="number" @bind="_startY" min="0" max="@GlobalConfig.GlobalWidth" />
+                    <input type="number" @bind="_startY" min="0" max="@GlobalConfig.GlobalWidth"/>
                 </div>
             </div>
 
@@ -27,22 +33,22 @@
                 <h4>End Location</h4>
                 <div class="coord-input">
                     <label>X:</label>
-                    <input type="number" @bind="_endX" min="0" max="@GlobalConfig.GlobalLength" />
+                    <input type="number" @bind="_endX" min="0" max="@GlobalConfig.GlobalLength"/>
                     <button @onclick="RandomizeEnd" class="btn btn-random">🎲</button>
                 </div>
                 <div class="coord-input">
                     <label>Y:</label>
-                    <input type="number" @bind="_endY" min="0" max="@GlobalConfig.GlobalWidth" />
+                    <input type="number" @bind="_endY" min="0" max="@GlobalConfig.GlobalWidth"/>
                 </div>
             </div>
         </div>
 
         <div class="price-input">
             <label>Max €/KM:</label>
-            <input type="number" @bind="_maxPrice" 
-                   min="@GlobalConfig.MinPricePerKm" 
-                   max="@GlobalConfig.MaxPricePerKm" 
-                   step="0.01" />
+            <input type="number" @bind="_maxPrice"
+                   min="@GlobalConfig.MinPricePerKm"
+                   max="@GlobalConfig.MaxPricePerKm"
+                   step="0.01"/>
         </div>
 
         <button @onclick="CreatePassenger" class="btn btn-create">Create Passenger</button>
@@ -54,7 +60,9 @@
             {
                 <div class="passenger-item">
                     <div class="passenger-info">
-                        <span class="passenger-id">@passenger.Id</span>
+                        <span class="passenger-id"><button style="border: none; color: blue; background-color: transparent; cursor:pointer; font-weight: bolder; text-decoration: underline" @onclick='async() => { 
+                                                               await JsRuntime.InvokeVoidAsync("openMapWindow", $"http://localhost:8001/getInvoices?id={passenger.Id}", "Invoices", 400, 600);
+                                                       }'>@passenger.Id</button></span>
                         <span class="passenger-price">(Max: @passenger.MaxPricePerKm.ToString("0.00")€/km)</span>
                     </div>
                     <div class="passenger-route">
@@ -73,13 +81,42 @@
     </div>
 </div>
 
+<script>
+    function openMapWindow(url, windowName, width, height) {
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+
+        window.open(url, windowName,
+            `toolbar=no, location=no, directories=no, status=no, menubar=no, 
+         scrollbars=yes, resizable=yes, width=${width}, height=${height}, 
+         top=${top}, left=${left}`);
+    }
+</script>
+
 @code {
     private int _startX;
     private int _startY;
     private int _endX;
     private int _endY;
+    private string _passengerId;
     private double _maxPrice = GlobalConfig.MaxPricePerKm;
     private Random _random = new();
+
+    protected override void OnInitialized()
+    {
+        RandomizeStart();
+        RandomizeEnd();
+        RandomizeName();
+        
+        Task.Run(async() =>
+        {
+            while (true) //zu meiner Verteidigung: es ist 4:12 und will es nicht mehr so elegant wie bei WorldMap machen
+            {
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(GlobalConfig.TimeBetweenTicksMs);
+            }
+        });
+    }
 
     private void RandomizeStart()
     {
@@ -92,20 +129,28 @@
         _endX = _random.Next(0, GlobalConfig.GlobalLength);
         _endY = _random.Next(0, GlobalConfig.GlobalWidth);
     }
+    
+    private void RandomizeName()
+    {
+        _passengerId = $"Passenger{_random.Next(1000, 9999)}";
+    }
 
     private void CreatePassenger()
     {
         if (_startX == _endX && _startY == _endY) return;
         if (ess.SimDrivers.Count >= 9000) return;
         var passenger = new SimPassenger(
-            id: GeneratePassengerId(),
+            id: _passengerId,
             startLocation: new Location { X = _startX, Y = _startY },
             destination: new Location { X = _endX, Y = _endY },
             maxPrice: _maxPrice,
             client: HttpClient
         );
+        passenger.StartedOnce = false;
 
-        ess.SimPassengers.Add(passenger);
+        ess.SimPassengers.RemoveAll(p => p.Id == passenger.Id);
+        ess.SimPassengers.Insert(0, passenger); //Insert as First Element
+        
         StateHasChanged();
     }
 
@@ -119,15 +164,17 @@
         return newId;
     }
 
-    private string GetRideStatus(SimPassenger passenger)
+    private string GetRideStatus(SimPassenger passenger) //Get from Location because Passenger has no way to know
     {
-        var status = passenger.CurrentRide?.Driver?.State;
+        var status = ess.SimDrivers.Where(sd => sd.CurrentRide?.Passenger.Id == passenger.Id).FirstOrDefault()?.State;
+        if(status == null && passenger.StartedOnce) return "Completed";
         if(status == null) return "Searching";
-        if(status == DriverState.OfferedRide) return "DriverAssigned";
+        passenger.StartedOnce = true;
+        if (status == DriverState.OfferedRide) return "DriverAssigned";
         if(status == DriverState.OnRouteToPassenger) return "DriverAssigned";
         if(status == DriverState.OnRouteToDestination) return "InTransit";
         if(status == DriverState.Available) return "Completed";
-        return "";
+        return "Searching";
     }
 
     private string GetRideStatusClass(string status)
@@ -200,7 +247,7 @@
     }
 
     .passenger-list {
-        height: 435px;
+        height: 420px;
         overflow-y: auto;
         border: 1px solid #eee;
         border-radius: 4px;

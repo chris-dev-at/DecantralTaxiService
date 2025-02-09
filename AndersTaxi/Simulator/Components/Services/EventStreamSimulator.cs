@@ -40,7 +40,7 @@ public class EventStreamSimulator
                 LocationSystem.RequestRideCall(requestRideMessage!);
                 break;
             default:
-                Console.WriteLine("Service does not handle this message type: " + e.Message.Type);
+                //Console.WriteLine("Service does not handle this message type: " + e.Message.Type);
                 break;
         }
     }
