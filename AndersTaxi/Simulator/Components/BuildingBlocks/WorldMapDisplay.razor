@@ -11,7 +11,7 @@
         {
             @for (int x = 0; x < GlobalConfig.GlobalLength; x++)
             {
-                var driversHere = ess.LocationSystem.Drivers?
+                var driversHere = GetSnapshot()?
                     .Where(d => d.Driver.Location.X == x && d.Driver.Location.Y == y)
                     .ToList();
 
@@ -22,7 +22,7 @@
                             @foreach (var driver in driversHere)
                             {
                                 <div class="driver-marker @GetDriverStateClass(driver.Driver.State)">
-                                    <div class="driver-tooltip">@driver.Driver.Id (@driver.Driver.State)</div>
+                                    <div class="driver-tooltip">@driver?.Driver.Id (@driver?.Driver.State)</div>
                                 </div>
                             }
                         </div>
@@ -46,6 +46,14 @@
 @code {
     private CancellationTokenSource _cts = new();
     private bool _autoUpdateEnabled = true;
+
+    private List<LocationEntry> GetSnapshot()
+    {
+        lock (ess.LocationSystem.LockObject)
+        {
+            return ess.LocationSystem.Drivers.ToList();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

@@ -9,6 +9,7 @@ public class LocationSystem : IDisposable
     public List<LocationEntry> Drivers { get; set; }
     public ProducerHandler ProducerHandler { get; set; }
     
+    public object LockObject = new object();
     
     private CancellationTokenSource _cts = new();
     public LocationSystem(ProducerHandler producerHandler)
@@ -58,13 +59,16 @@ public class LocationSystem : IDisposable
             Console.WriteLine("Invalid location update");
             return;
         }
-        
-        this.Drivers.RemoveAll(le => le.Driver.Id == message.Driver.Id);
-        this.Drivers.Add(new LocationEntry()
+
+        lock (LockObject)
         {
-            Driver = message.Driver,
-            Time = DateTime.Now
-        }); 
+            this.Drivers.RemoveAll(le => le.Driver.Id == message.Driver.Id);
+            this.Drivers.Add(new LocationEntry()
+            {
+                Driver = message.Driver,
+                Time = DateTime.Now
+            }); 
+        }
     }
 
     public async Task RequestRideCall(RequestRideMessage message)
@@ -87,7 +91,10 @@ public class LocationSystem : IDisposable
 
     public void ClearOldEntries() //In case of a driver disconnecting
     {
-        this.Drivers.RemoveAll(x => x.Time < DateTime.Now.AddSeconds(-5)); //Remove all entries older than 5 seconds
+        lock (LockObject)
+        {
+            this.Drivers.RemoveAll(x => x.Time < DateTime.Now.AddSeconds(-5)); //Remove all entries older than 5 seconds
+        }
     }
     
     

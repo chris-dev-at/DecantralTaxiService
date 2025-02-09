@@ -18,8 +18,8 @@
         <div class="driver-list">
             @foreach (var driver in ess.SimDrivers)
             {
-                <div class="driver-item">
-                    <span class="driver-id">@driver.Id</span>
+                <div class="driver-item @GetStateClass(driver.State)">
+                    <span class="driver-id">@driver.Id <span class="driver-state">(@driver.State)</span></span>
                     <button @onclick="() => DeleteDriver(driver.Id)" class="btn btn-delete">Delete</button>
                 </div>
             }
@@ -51,6 +51,19 @@
         StateHasChanged();
     }
 
+    private string GetStateClass(DriverState state)
+    {
+        return state switch
+        {
+            DriverState.Unavailable => "state-unavailable-soft",
+            DriverState.Available => "state-available-soft",
+            DriverState.OfferedRide => "state-offeredride-soft",
+            DriverState.OnRouteToPassenger => "state-onroutetopassenger-soft",
+            DriverState.OnRouteToDestination => "state-onroutetodestination-soft",
+            _ => "state-unavailable-soft"
+        };
+    }
+    
     private void CreateDummyDrivers()
     {
         for (int i = 0; i < _newDriversCount && ess.SimDrivers.Count < 9001; i++) //max of 9000 ids
@@ -127,9 +140,11 @@
         justify-content: space-between;
         align-items: center;
         padding: 0.5rem;
-        margin: 0.25rem 0;
         background-color: #f8f9fa;
         border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin: 2px 0;
+        transition: background-color 0.3s ease;
     }
 
     .driver-item:hover {
@@ -166,6 +181,20 @@
     .btn-delete:hover {
         background-color: #bb2d3b;
     }
-    
+
+
+    /* State Background Colors */
+    .state-unavailable-soft { background-color: #E0E0E0; }  /* Soft Gray */
+    .state-available-soft { background-color: #C8E6C9; }    /* Mint Green */
+    .state-offeredride-soft { background-color: #FFE0B2; }  /* Peach */
+    .state-onroutetopassenger-soft { background-color: #E1BEE7; } /* Lavender */
+    .state-onroutetodestination-soft { background-color: #B3E5FC; } /* Sky Blue */
+
+    /* Add state text styling */
+    .driver-state {
+        font-size: 0.8em;
+        opacity: 0.8;
+        margin-left: 0.3em;
+    }
     
 </style>
