@@ -10,7 +10,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CloudNative.CloudEvents" Version="2.8.0" />
       <PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
     </ItemGroup>
 
