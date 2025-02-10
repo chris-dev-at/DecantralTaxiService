@@ -28,11 +28,11 @@ public class SimDriver : Driver, IDisposable
     
     private async Task StartAutoUpdate(CancellationToken token)
     {
-        await Task.Run(async () =>
+        Task.Run(async () =>
         {
             while (!token.IsCancellationRequested)
             {
-                Tick();
+                await Tick();
                 await Task.Delay(GlobalConfig.TimeBetweenTicksMs);
             }
         }, token);
@@ -59,8 +59,10 @@ public class SimDriver : Driver, IDisposable
                 break;
             case DriverState.OnRouteToPassenger:
                 var arrived1 = MoveTowards(CurrentRide.StartLocation);
-                if(arrived1)
+                if (arrived1)
+                {
                     State = DriverState.OnRouteToDestination;
+                }
                 break;
             case DriverState.OnRouteToDestination:
                 var arrived2 = MoveTowards(CurrentRide.EndLocation);
@@ -71,18 +73,15 @@ public class SimDriver : Driver, IDisposable
                 }
                 break;
         }
-        
     }
 
 
     public async Task CompleteRide()
     {
         var res = await _client.GetAsync($"http://driverservice:8080/completeRide?passengerId={CurrentRide.Passenger.Id}&driverId={Id}&distance={CurrentRide.Distance}&pricePerKm={PricePerKm}");
-        if (res.StatusCode == HttpStatusCode.OK)
-        {
-            State = DriverState.Available;
-            CurrentRide = null;
-        }
+
+        CurrentRide = null;
+        State = DriverState.Available;
     }
     
     public async Task CheckRides()
@@ -90,16 +89,22 @@ public class SimDriver : Driver, IDisposable
         //get all open requests
         var openRequests = await _client.GetFromJsonAsync<List<RequestDriverMessage>>($"http://driverservice:8080/getOpenRequests?id={Id}");
         
-        //90% Chance to accept a ride
-        if (openRequests.Count > 0 && _random.Next(0, 100) < 90)
+        //For now 100%  --(90% Chance to accept a ride) 
+        if (openRequests.Count > 0 /*&& _random.Next(0, 100) < 90*/)
         {
             var request = openRequests.First();
 
+            //check if driver likes the price
+            if (request.Ride.Passenger.MaxPricePerKm < PricePerKm)
+            {
+                return;
+            }
+            
             var res = await _client.GetAsync($"http://driverservice:8080/acceptRequest?driverId={Id}&passengerId={request.Ride.Passenger.Id}");
             if (res.StatusCode == HttpStatusCode.OK)
             {
+                CurrentRide = request.Ride; 
                 State = DriverState.OnRouteToPassenger;
-                CurrentRide = request.Ride;
             }
             if(res.StatusCode == HttpStatusCode.NotFound)
                 State = DriverState.Available;
@@ -157,7 +162,7 @@ public class SimDriver : Driver, IDisposable
         }
         else
         {
-            State = DriverState.Unavailable;
+            State = DriverState.Unavailable; //somehow crashes acceptance of rides somehow (not sure why and wont fix it unless needed) ;)
         }
     }
     

@@ -20,12 +20,12 @@
                 <h4>Start Location</h4>
                 <div class="coord-input">
                     <label>X:</label>
-                    <input type="number" @bind="_startX" min="0" max="@GlobalConfig.GlobalLength"/>
+                    <input type="number" @bind="_startX" min="0" max="@(GlobalConfig.GlobalLength-1)"/>
                     <button @onclick="RandomizeStart" class="btn btn-random">🎲</button>
                 </div>
                 <div class="coord-input">
                     <label>Y:</label>
-                    <input type="number" @bind="_startY" min="0" max="@GlobalConfig.GlobalWidth"/>
+                    <input type="number" @bind="_startY" min="0" max="@(GlobalConfig.GlobalWidth-1)"/>
                 </div>
             </div>
 
@@ -33,12 +33,12 @@
                 <h4>End Location</h4>
                 <div class="coord-input">
                     <label>X:</label>
-                    <input type="number" @bind="_endX" min="0" max="@GlobalConfig.GlobalLength"/>
+                    <input type="number" @bind="_endX" min="0" max="@(GlobalConfig.GlobalLength-1)"/>
                     <button @onclick="RandomizeEnd" class="btn btn-random">🎲</button>
                 </div>
                 <div class="coord-input">
                     <label>Y:</label>
-                    <input type="number" @bind="_endY" min="0" max="@GlobalConfig.GlobalWidth"/>
+                    <input type="number" @bind="_endY" min="0" max="@(GlobalConfig.GlobalWidth-1)"/>
                 </div>
             </div>
         </div>
@@ -63,7 +63,10 @@
                         <span class="passenger-id"><button style="border: none; color: blue; background-color: transparent; cursor:pointer; font-weight: bolder; text-decoration: underline" @onclick='async() => { 
                                                                await JsRuntime.InvokeVoidAsync("openMapWindow", $"http://localhost:8001/getInvoices?id={passenger.Id}", "Invoices", 400, 600);
                                                        }'>@passenger.Id</button></span>
-                        <span class="passenger-price">(Max: @passenger.MaxPricePerKm.ToString("0.00")€/km)</span>
+                        <span class="passenger-price">(Max: @passenger.MaxPricePerKm.ToString("0.00")€/km)
+                            <button style="border: none; color: blue; background-color: transparent; cursor:pointer; text-decoration: underline" 
+                                    @onclick='async() => { ess.SimPassengers.RemoveAll(sp => sp.Id == passenger.Id); }'>Delete</button>
+                            </span>
                     </div>
                     <div class="passenger-route">
                         Start: (@passenger.CurrentRide.StartLocation.X, @passenger.CurrentRide.StartLocation.Y) → 

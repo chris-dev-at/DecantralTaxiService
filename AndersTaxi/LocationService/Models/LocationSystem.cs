@@ -73,12 +73,16 @@ public class LocationSystem : IDisposable
 
     public async Task RequestRideCall(RequestRideMessage message)
     {
+        
         //get all drivers in range of GlobalConfig.MaxAcceptableDistance and available and within passenger's price range
         var driversInRange = this.Drivers.Where(x => 
             x.Driver.State == DriverState.Available && 
             x.Driver.PricePerKm <= message.Ride.Passenger.MaxPricePerKm &&
             x.Driver.Location.Distance(message.Ride.StartLocation) < GlobalConfig.MaxAcceptableDistance)
             .ToList();
+        
+        Console.WriteLine($"Request Ride: {message.Ride.Passenger.Id} wants a ride at {message.Ride.StartLocation.X}, {message.Ride.StartLocation.Y}. Matches: {driversInRange.Count}");
+
         
         var requestDriverMessage = new RequestDriverMessage()
         {

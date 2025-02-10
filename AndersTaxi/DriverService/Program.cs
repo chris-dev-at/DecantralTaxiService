@@ -14,6 +14,7 @@ class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        
         //inject
         var factory = await CommunicationHandlerFactory.Initialize(GlobalConfig.HostName);
         var consumerHandler = await factory.CreateConsumerHandler("driver_queue");
@@ -25,6 +26,8 @@ class Program
         builder.Services.AddSingleton<ConsumerHandler>(ch => consumerHandler);
         builder.Services.AddSingleton<ProducerHandler>(ph => producerHandler);
 
+        CompletionListener(); //ensure no request is open for more then 5 seconds
+        
         var app = builder.Build();
 
         app.MapGet("/", () => "Driver Says Hello!");
@@ -72,6 +75,8 @@ class Program
                 }
                 openRequests.Remove(request);
 
+
+                Console.WriteLine("Accepted request for " + passengerId + " by " + driverId);
                 return Results.Ok("Published Accept Request message");
             }
         });
@@ -86,6 +91,7 @@ class Program
                 if(request != null)
                 {
                     openRequests.Remove(request);
+                    Console.WriteLine("");
                 }
             }
             
@@ -119,6 +125,7 @@ class Program
         {
             case MessageType.RequestDriver:
                 var requestDriverMessage = e.Message as RequestDriverMessage;
+                requestDriverMessage.CreationTime = DateTime.Now;
                 RequestDriverCall(requestDriverMessage!);
                 break;
             default:
@@ -129,9 +136,9 @@ class Program
 
     private static void RequestDriverCall(RequestDriverMessage rdm)
     {
-        if(openRequests.Any(x => x.Ride.Passenger.Id == rdm.Ride.Passenger.Id))
+        if(openRequests.Any((x => x.Ride.Passenger.Id == rdm.Ride.Passenger.Id)))
         {
-            Console.WriteLine("Passenger already has an open request");
+            RequeueMessage(rdm);
             return;
         }
     
@@ -139,22 +146,69 @@ class Program
         {
             //Console.WriteLine("No drivers available for this request, Requeuing...");
         
-            //requeue message
-            var msg = new RequestRideMessage()
-            {
-                Ride = rdm.Ride,
-            };
-            Task.Run(async() =>
-            {
-                await Task.Delay(2000);
-                await producerHandler.SendMessageAsync("location", msg);
-            });
-        
-            return;
+            RequeueMessage(rdm);
         }
-    
-        openRequests.Add(rdm);
+
+        lock (LockObject)
+        {
+            openRequests.Add(rdm);
+        }
     }
+    private static void RequeueMessage(RequestDriverMessage rdm)
+    {
+        RemoveDupe(rdm);
+        
+        //requeue message
+        var msg = new RequestRideMessage()
+        {
+            Ride = rdm.Ride,
+        };
+        Task.Run(async() =>
+        {
+            await Task.Delay(2000);
+            await producerHandler.SendMessageAsync("location", msg);
+        });
+    }
+
+    //ensures request is requeued if no driver accepts within 5 seconds (quick fix, should not be done in production)
+    private static void CompletionListener()
+    {
+        Task.Run(async() =>
+        {
+            while (true)
+            {
+                await Task.Delay(5000);
+                lock (LockObject)
+                {
+                    foreach (var request in openRequests)
+                    {
+                        if (request.CreationTime.AddSeconds(5) < DateTime.Now)
+                        {
+                            Console.WriteLine("Requeuing message: Expired");
+                            RequeueMessage(request);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private static void RemoveDupe(string pId, int startx, int starty, int endx, int endy)
+    {
+        lock (LockObject)
+        {
+            var duplicates = openRequests.Where(r => r.Ride.Passenger.Id == pId &&
+                                                     r.Ride.StartLocation.X == startx &&
+                                                     r.Ride.StartLocation.Y == starty &&
+                                                     r.Ride.EndLocation.X == endx &&
+                                                     r.Ride.EndLocation.Y == endy).ToList();
+            foreach (var rq in duplicates)
+            {
+                openRequests.Remove(rq);
+            }
+        }
+    }
+    private static void RemoveDupe(RequestDriverMessage rdm) => RemoveDupe(rdm.Ride.Passenger.Id, rdm.Ride.StartLocation.X, rdm.Ride.StartLocation.Y, rdm.Ride.EndLocation.X, rdm.Ride.EndLocation.Y);
 }
 
 

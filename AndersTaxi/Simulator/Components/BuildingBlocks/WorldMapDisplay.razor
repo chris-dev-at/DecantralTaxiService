@@ -16,7 +16,26 @@
                     .Where(d => d.Driver.Location.X == x && d.Driver.Location.Y == y)
                     .ToList();
                 
-                <div class="grid-cell" style="grid-column: @(x+1); grid-row: @(y+1);">
+                var passengerStartHere = ess.SimPassengers
+                    .Where(sp => sp.CurrentRide.StartLocation.X == x && sp.CurrentRide.StartLocation.Y == y)
+                    .ToList();
+                var passengerEndHere = ess.SimPassengers
+                    .Where(sp => sp.CurrentRide.EndLocation.X == x && sp.CurrentRide.EndLocation.Y == y)
+                    .ToList();
+
+                string cellColor = "";
+                if(passengerEndHere.Count > 0 || passengerStartHere.Count > 0)
+                {
+                    cellColor = 
+                        passengerStartHere.Count > 0 && passengerEndHere.Count > 0 ? "rgba(255, 255, 0, 0.5)" :
+                        passengerStartHere.Count > 0 ? "rgba(128, 0, 128, 0.5)" :
+                        passengerEndHere.Count > 0 ? "rgba(0, 0, 255, 0.5)" :
+                        "";
+                }
+                
+                
+                
+                <div class="grid-cell" style="grid-column: @(x+1); grid-row: @(y+1); background-color: @cellColor;">
                     @if (driversHere?.Count > 0)
                     {
                         <div class="drivers-container">

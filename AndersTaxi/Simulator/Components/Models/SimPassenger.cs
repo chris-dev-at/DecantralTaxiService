@@ -35,11 +35,11 @@ public class SimPassenger : Passenger, IDisposable
     
     private async Task StartAutoUpdate(CancellationToken token)
     {
-        await Task.Run(async () =>
+        Task.Run(async () =>
         {
             while (!token.IsCancellationRequested)
             {
-                Tick();
+                await Tick();
                 await Task.Delay(GlobalConfig.TimeBetweenTicksMs);
             }
         }, token);
