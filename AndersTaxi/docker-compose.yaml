@@ -1,53 +1,4 @@
 ﻿services:
-  locationservice:
-    image: locationservice
-    restart: always
-    build:
-      context: .
-      dockerfile: LocationService/Dockerfile
-    depends_on:
-      - rabbitmq
-
-  driverservice:
-    image: driverservice
-    restart: always
-    build:
-      context: .
-      dockerfile: DriverService/Dockerfile
-    ports:
-      - "8002:8080"
-    depends_on:
-      - rabbitmq
-
-  logservice:
-    image: logservice
-    restart: always
-    build:
-      context: .
-      dockerfile: LogService/Dockerfile
-    depends_on:
-      - rabbitmq
-
-  passengerservice:
-    image: passengerservice
-    restart: always
-    build:
-      context: .
-      dockerfile: PassengerService/Dockerfile
-    ports:
-      - "8001:8080"
-    depends_on:
-      - rabbitmq
-
-  paymentservice:
-    image: paymentservice
-    restart: always
-    build:
-      context: .
-      dockerfile: PaymentService/Dockerfile
-    depends_on:
-      - rabbitmq
-  
   rabbitmq:
     image: rabbitmq:3-management
     hostname: rabbitmq
@@ -72,6 +23,65 @@
     build:
       context: .
       dockerfile: SetupQueues/Dockerfile
+  
+  locationservice:
+    image: locationservice
+    restart: always
+    build:
+      context: .
+      dockerfile: LocationService/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+
+  driverservice:
+    image: driverservice
+    restart: always
+    build:
+      context: .
+      dockerfile: DriverService/Dockerfile
+    ports:
+      - "8002:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+
+  logservice:
+    image: logservice
+    restart: always
+    build:
+      context: .
+      dockerfile: LogService/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+
+  passengerservice:
+    image: passengerservice
+    restart: always
+    build:
+      context: .
+      dockerfile: PassengerService/Dockerfile
+    ports:
+      - "8001:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+
+  paymentservice:
+    image: paymentservice
+    restart: always
+    build:
+      context: .
+      dockerfile: PaymentService/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
 
   simulator:
     image: simulator
