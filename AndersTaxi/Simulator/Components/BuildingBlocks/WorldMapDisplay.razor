@@ -24,6 +24,7 @@
                     .ToList();
 
                 string cellColor = "";
+                string passengerinfo = "";
                 if(passengerEndHere.Count > 0 || passengerStartHere.Count > 0)
                 {
                     cellColor = 
@@ -31,11 +32,22 @@
                         passengerStartHere.Count > 0 ? "rgba(128, 0, 128, 0.5)" :
                         passengerEndHere.Count > 0 ? "rgba(0, 0, 255, 0.5)" :
                         "";
+                    
+                    var passengerParts = new List<string>();
+                    passengerParts.AddRange(passengerStartHere.Select(p => $"{p.Id} (Pick Up)"));
+                    passengerParts.AddRange(passengerEndHere.Select(p => $"{p.Id} (Destination)"));
+                    passengerinfo = string.Join("<br>", passengerParts);
                 }
                 
                 
                 
-                <div class="grid-cell" style="grid-column: @(x+1); grid-row: @(y+1); background-color: @cellColor;">
+                <div class="grid-cell" style="grid-column: @(x + 1); grid-row: @(y + 1); background-color: @cellColor;">
+                    @if (!string.IsNullOrEmpty(cellColor))
+                    {
+                        <div class="passenger-tooltip">
+                            @((MarkupString)passengerinfo)
+                        </div>
+                    }
                     @if (driversHere?.Count > 0)
                     {
                         <div class="drivers-container">
@@ -153,6 +165,10 @@
         background-color: white;
         position: relative;
     }
+    
+    .grid-cell:hover .passenger-tooltip {
+        visibility: visible;
+    }
 
     .drivers-container {
         position: absolute;
@@ -192,6 +208,22 @@
         transform: translateX(-50%);
         white-space: nowrap;
         font-size: 12px;
+    }
+
+    .passenger-tooltip {
+        visibility: hidden;
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 4px;
+        border-radius: 4px;
+        white-space: nowrap;
+        font-size: 12px;
+        z-index: 2;
+        pointer-events: none;
     }
 
     .state-unavailable { background-color: #808080; }
