@@ -13,8 +13,12 @@ public class EventStreamSimulator
     private ConsumerHandler _consumerHandler;
     
     public LocationSystemSimulated LocationSystem = new LocationSystemSimulated();
+    public int TotalDistanceDriven = 0;
+    public double TotalRevenue = 0;
+    public int TotalRides = 0;
 
     public List<SimDriver> SimDrivers = new List<SimDriver>();
+    public object SimPassemgerLock = new object();
     public List<SimPassenger> SimPassengers = new List<SimPassenger>();
     
     public EventStreamSimulator(CommunicationHandlerFactory communicationHandlerFactory, ConsumerHandler consumerHandler)
@@ -39,11 +43,28 @@ public class EventStreamSimulator
                 //Console.WriteLine($"Request Ride: {requestRideMessage?.Ride.PassengerId} wants a ride at {requestRideMessage?.Ride.StartLocation.X}, {requestRideMessage?.Ride.StartLocation.Y}");
                 LocationSystem.RequestRideCall(requestRideMessage!);
                 break;
+            case MessageType.InvoiceEnquiry:
+                var invoiceEnquiryMessage = e.Message as InvoiceEnquiryMessage;
+                //Console.WriteLine($"Invoice Enquiry: {invoiceEnquiryMessage?.PassengerId} wants to know the price of a ride");
+                InvoiceEnquiryCall(invoiceEnquiryMessage!);
+                break;
+            case MessageType.RideComplete:
+                var rideCompleteMessage = e.Message as RideCompleteMessage;
+                RideCompleteCall(rideCompleteMessage!);
+                break;
             default:
                 //Console.WriteLine("Service does not handle this message type: " + e.Message.Type);
                 break;
         }
     }
+    
+    private void InvoiceEnquiryCall(InvoiceEnquiryMessage message) => this.TotalRevenue += message.Amount; 
+    private void RideCompleteCall(RideCompleteMessage message)
+    {
+        this.TotalDistanceDriven += message.Ride.Distance;
+        this.TotalRides++;
+    }     
+        
     
     
 }

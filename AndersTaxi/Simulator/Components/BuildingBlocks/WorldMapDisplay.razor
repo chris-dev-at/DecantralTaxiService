@@ -16,12 +16,18 @@
                     .Where(d => d.Driver.Location.X == x && d.Driver.Location.Y == y)
                     .ToList();
                 
-                var passengerStartHere = ess.SimPassengers
-                    .Where(sp => sp.CurrentRide.StartLocation.X == x && sp.CurrentRide.StartLocation.Y == y)
-                    .ToList();
-                var passengerEndHere = ess.SimPassengers
-                    .Where(sp => sp.CurrentRide.EndLocation.X == x && sp.CurrentRide.EndLocation.Y == y)
-                    .ToList();
+                List<SimPassenger> passengerStartHere = new();
+                List<SimPassenger> passengerEndHere = new();
+                lock (ess.SimPassemgerLock)
+                {
+                    passengerStartHere = ess.SimPassengers
+                        .Where(sp => sp.CurrentRide.StartLocation.X == x && sp.CurrentRide.StartLocation.Y == y)
+                        .ToList();
+                    passengerEndHere = ess.SimPassengers
+                        .Where(sp => sp.CurrentRide.EndLocation.X == x && sp.CurrentRide.EndLocation.Y == y)
+                        .ToList();
+                    
+                }
 
                 string cellColor = "";
                 string passengerinfo = "";

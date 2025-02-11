@@ -7,6 +7,10 @@
 
 <div class="management-section">
     <h3>Driver Management</h3>
+    <div class="" style="display: flex; flex-direction: column; padding-bottom: 1rem; margin-top: -1rem;">
+        <span>Total Revenue: @ess.TotalRevenue.ToString("0.00")€</span>
+        <span>Total Distance: @(ess.TotalDistanceDriven)km  (@ess.TotalRides Rides)</span>
+    </div>
 
     <div class="driver-controls">
         <div class="create-controls">
@@ -141,7 +145,7 @@
     }
 
     .driver-list {
-        height: calc(100vh - 300px); /* Adjust based on your layout */
+        height: calc(100vh - 330px); /* Adjust based on your layout */
         overflow-y: auto;
         border: 1px solid #eee;
         border-radius: 4px;
