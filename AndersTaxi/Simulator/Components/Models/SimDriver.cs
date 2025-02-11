@@ -47,7 +47,7 @@ public class SimDriver : Driver, IDisposable
         switch (this.State)
         {
             case DriverState.Unavailable:
-                await Task.Delay(5000);
+                await Task.Delay(GlobalConfig.TimeBetweenTicksMs*4);
                 State = DriverState.Available;
                 break;
             case DriverState.Available:
