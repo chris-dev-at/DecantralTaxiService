@@ -43,33 +43,40 @@
             </div>
         </div>
 
-        <div class="price-input">
+        <div class="price-input" style="display:flex;">
             <label>Max €/KM:</label>
             <input type="number" @bind="_maxPrice"
                    min="@GlobalConfig.MinPricePerKm"
                    max="@GlobalConfig.MaxPricePerKm"
                    step="0.01"/>
+            <br>
+            <button @onclick="CreatePassenger" class="btn btn-create">Create Passenger</button>
         </div>
 
-        <button @onclick="CreatePassenger" class="btn btn-create">Create Passenger</button>
+        <div class="price-input" style="display: flex">
+            <label>Random Passengers</label>
+            <input type="number" @bind="_randomPassengerCount"/>
+            <br>
+            <button @onclick="GenerateRandomPassengers" class="btn btn-create">Generate</button>
+        </div>
     </div>
 
     <div class="active-passengers">
+        <button style="border: none; color: blue; background-color: transparent; cursor:pointer; text-decoration: underline"
+                @onclick='async () => { ess.SimPassengers.Clear(); }'>Delete All</button>
         <div class="passenger-list">
             @foreach (var passenger in ess.SimPassengers)
             {
                 <div class="passenger-item">
                     <div class="passenger-info">
-                        <span class="passenger-id"><button style="border: none; color: blue; background-color: transparent; cursor:pointer; font-weight: bolder; text-decoration: underline" @onclick='async() => { 
-                                                               await JsRuntime.InvokeVoidAsync("openMapWindow", $"http://localhost:8001/getInvoices?id={passenger.Id}", "Invoices", 400, 600);
-                                                       }'>@passenger.Id</button></span>
+                        <span class="passenger-id"><button style="border: none; color: blue; background-color: transparent; cursor:pointer; font-weight: bolder; text-decoration: underline" @onclick='async () => { await JsRuntime.InvokeVoidAsync("openMapWindow", $"http://localhost:8001/getInvoices?id={passenger.Id}", "Invoices", 400, 600); }'>@passenger.Id</button></span>
                         <span class="passenger-price">(Max: @passenger.MaxPricePerKm.ToString("0.00")€/km)
-                            <button style="border: none; color: blue; background-color: transparent; cursor:pointer; text-decoration: underline" 
-                                    @onclick='async() => { ess.SimPassengers.RemoveAll(sp => sp.Id == passenger.Id); }'>Delete</button>
-                            </span>
+                            <button style="border: none; color: blue; background-color: transparent; cursor:pointer; text-decoration: underline"
+                                    @onclick='async () => { ess.SimPassengers.RemoveAll(sp => sp.Id == passenger.Id); }'>Delete</button>
+                        </span>
                     </div>
                     <div class="passenger-route">
-                        Start: (@passenger.CurrentRide.StartLocation.X, @passenger.CurrentRide.StartLocation.Y) → 
+                        Start: (@passenger.CurrentRide.StartLocation.X, @passenger.CurrentRide.StartLocation.Y) →
                         End: (@passenger.CurrentRide.EndLocation.X, @passenger.CurrentRide.EndLocation.Y)
                     </div>
                     @if (GetRideStatus(passenger) != null)
@@ -102,6 +109,7 @@
     private int _endX;
     private int _endY;
     private string _passengerId;
+    private int _randomPassengerCount = 10;
     private double _maxPrice = GlobalConfig.MaxPricePerKm;
     private Random _random = new();
 
@@ -138,6 +146,17 @@
         _passengerId = $"Passenger{_random.Next(1000, 9999)}";
     }
 
+    private void GenerateRandomPassengers()
+    {
+        for (int i = 0; i < _randomPassengerCount; i++)
+        {
+            RandomizeStart();
+            RandomizeEnd();
+            RandomizeName();
+            CreatePassenger();
+        }
+    }
+    
     private void CreatePassenger()
     {
         if (_startX == _endX && _startY == _endY) return;
