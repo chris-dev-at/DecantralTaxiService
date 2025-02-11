@@ -62,8 +62,12 @@
     </div>
 
     <div class="active-passengers">
-        <button style="border: none; color: blue; background-color: transparent; cursor:pointer; text-decoration: underline"
-                @onclick='async () => { ess.SimPassengers.Clear(); }'>Delete All</button>
+        <div style="display:flex;">
+            <button style="border: none; color: blue; background-color: transparent; cursor:pointer; text-decoration: underline"
+                    @onclick='async () => { ess.SimPassengers.Clear(); }'>Delete All</button>
+            <button style="border: none; color: blue; background-color: transparent; cursor:pointer; text-decoration: underline"
+                    @onclick='async () => { ess.SimPassengers.RemoveAll(sp => GetRideStatus(sp) == "Completed"); }'>Delete Completed</button>
+        </div>
         <div class="passenger-list">
             @foreach (var passenger in ess.SimPassengers)
             {

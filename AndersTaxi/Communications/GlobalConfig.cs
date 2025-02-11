@@ -7,6 +7,6 @@ public static class GlobalConfig
     public static int GlobalWidth = 30;
     public static int TimeBetweenTicksMs = 1500;
     public static int MaxAcceptableDistance = 10;
-    public static double MaxPricePerKm = 0.8;
-    public static double MinPricePerKm = 0.2;
+    public static double MaxPricePerKm = 1.6;
+    public static double MinPricePerKm = 0.8;
 }
