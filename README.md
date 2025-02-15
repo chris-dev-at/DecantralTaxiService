@@ -1,5 +1,9 @@
 # DecantralTaxiService
 A decentralized taxi service based on asynchronous communication and message-oriented middleware
+
+# Systemplan
+![Systemplan](https://github.com/user-attachments/assets/06b758eb-3dad-4166-849b-cc940d882d22)
+
 # Configuration
 Configuration is located in `AndersTaxi/Communications/GlobalConfig.cs`.
 ```csharp
@@ -16,6 +20,9 @@ public static class GlobalConfig
 ```
 To apply the configuration, a restart is required!
 
+# Preview
+This is a taxi service simulation application that demonstrates ride-hailing operations with drivers and passengers. The system consists of five microservices handling different aspects of the taxi service and one simulation app for testing interactions.
 
-# Systemplan
-![Systemplan](https://github.com/user-attachments/assets/06b758eb-3dad-4166-849b-cc940d882d22)
+![image](https://github.com/user-attachments/assets/57a1c322-ef65-4789-b114-2f4acf84f01f)
+
+
